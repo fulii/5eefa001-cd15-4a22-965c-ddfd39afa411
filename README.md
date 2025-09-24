@@ -1,2 +1,7 @@
-# 5eefa001-cd15-4a22-965c-ddfd39afa411
-weather API
+# Setup instructions
+
+- Tested on Arch linux and OSX
+- Arch linux
+    - `yay -S python-invoke python-uv`
+- OSX
+    - `brew install uv pyinvoke`
