@@ -34,9 +34,7 @@ async def send_sensor_data(
         "timestamp": timestamp.isoformat(),
     }
 
-    async with session.post(
-        f"{api_url}/api/v1/sensors/{sensor_id}/data", json=payload
-    ) as response:
+    async with session.post(f"{api_url}/api/v1/sensors/{sensor_id}/data", json=payload) as response:
         if response.status >= 400:
             with contextlib.suppress(Exception):
                 await response.text()
@@ -44,9 +42,7 @@ async def send_sensor_data(
         return True
 
 
-async def send_all_data_concurrently(
-    tasks_batch: list, api_url: str, semaphore: asyncio.Semaphore
-) -> list[bool]:
+async def send_all_data_concurrently(tasks_batch: list, api_url: str, semaphore: asyncio.Semaphore) -> list[bool]:
     """Send sensor data concurrently with a single session and semaphore control."""
     timeout = aiohttp.ClientTimeout(total=30)
     async with aiohttp.ClientSession(timeout=timeout) as session:

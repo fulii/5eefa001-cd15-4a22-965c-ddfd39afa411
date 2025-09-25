@@ -40,58 +40,53 @@ class TimescaleDBHandler:
     async def query_sensor_data(self, query: SensorQuery) -> list[SensorQueryResult]:
         """Query sensor data from TimescaleDB with statistics"""
         async with self.get_session() as session:
-            metric_columns = []
             requested_metrics = query.metrics or [
                 m.value for m in MetricType.__members__.values()
             ]
+            # Filter to only metrics that exist on SensorMetric once up-front
+            valid_metrics = [m for m in requested_metrics if hasattr(SensorMetric, m)]
+            if not valid_metrics:
+                return []
 
             agg_func = query.statistic.to_sqlalchemy_func()
 
-            for metric_name in requested_metrics:
-                if hasattr(SensorMetric, metric_name):
-                    column = getattr(SensorMetric, metric_name)
-                    metric_columns.append(
-                        agg_func(column).label(f"{metric_name}_value")
-                    )
-
-            stmt = select(SensorMetric.sensor_id, *metric_columns).group_by(
-                SensorMetric.sensor_id
-            )
+            stmt = select(
+                SensorMetric.sensor_id,
+                *(
+                    agg_func(getattr(SensorMetric, m)).label(f"{m}_value")
+                    for m in valid_metrics
+                ),
+            ).group_by(SensorMetric.sensor_id)
 
             if query.sensor_ids:
                 stmt = stmt.where(SensorMetric.sensor_id.in_(query.sensor_ids))
 
             start_date, end_date = query.get_date_filter()
             stmt = stmt.where(
-                SensorMetric.timestamp >= start_date, SensorMetric.timestamp <= end_date
+                SensorMetric.timestamp >= start_date,
+                SensorMetric.timestamp <= end_date,
             )
 
-            result = await session.execute(stmt)
-            rows = result.fetchall()
+            rows = (await session.execute(stmt)).fetchall()
 
-            sensor_results = []
-            for row in rows:
-                metrics = []
-                for metric_name in requested_metrics:
-                    if hasattr(SensorMetric, metric_name):
-                        value = getattr(row, f"{metric_name}_value", None)
-                        if value is not None:
-                            metrics.append(
-                                MetricResult(
-                                    metric=metric_name,
-                                    value=float(value),
-                                    statistic=query.statistic.value,
-                                )
-                            )
-
-                if metrics:
-                    sensor_results.append(
-                        SensorQueryResult(
-                            sensor_id=row.sensor_id, metrics=metrics, timestamp=end_date
+            sensor_results = [
+                SensorQueryResult(
+                    sensor_id=row.sensor_id,
+                    metrics=[
+                        MetricResult(
+                            metric=m,
+                            value=float(getattr(row, f"{m}_value")),
+                            statistic=query.statistic.value,
                         )
-                    )
+                        for m in valid_metrics
+                        if getattr(row, f"{m}_value", None) is not None
+                    ],
+                    timestamp=end_date,
+                )
+                for row in rows
+            ]
 
-            return sensor_results
+            return [r for r in sensor_results if r.metrics]
 
     async def close(self):
         """Close database connections"""

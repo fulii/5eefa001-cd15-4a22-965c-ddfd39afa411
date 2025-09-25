@@ -42,7 +42,7 @@ def format_code(ctx):
 
 
 @task(
-    pre=[format_code, ruff, pyrefly, bandit],
+    pre=[format_code, ruff, bandit, pyrefly],
     default=True,
 )
 def check_all(ctx):
