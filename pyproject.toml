@@ -1,20 +1,71 @@
 [project]
-name = "weather-api"
+name = "sensor-api"
 version = "0.1.0"
-description = "Add your description here"
+description = "A REST API for sensor data ingestion and querying with statistics"
 readme = "README.md"
 requires-python = ">=3.13"
 
 dependencies = [
-    "influxdb>=5.3.1",
     "litestar>=2.17.0",
-    "pydantic>=2.11.9",
     "msgspec>=0.19.0",
+    "psycopg2-binary>=2.9.10",
+    "asyncpg>=0.30.0",
+    "sqlalchemy[asyncio]>=2.0.43",
+    "alembic>=1.16.5",
+    "uvicorn>=0.37.0",
+    "python-dotenv>=1.1.1",
 ]
 
 [dependency-groups]
 dev = [
+    "bandit>=1.8.6",
     "pyrefly>=0.34.0",
     "pytest>=8.4.2",
+    "pytest-asyncio>=1.2.0",
     "ruff>=0.13.1",
+    "invoke>=2.2.0",
+    "aiohttp>=3.12.15",
 ]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "F",  # Pyflakes
+    "W",  # pycodestyle warnings
+    "I",  # isort
+    "UP", # pyupgrade
+    "B",  # flake8-bugbear
+    "A",  # flake8-builtins
+    "C4", # flake8-comprehensions
+    "T20",# flake8-print
+    "SIM",# flake8-simplify
+    "PTH",# flake8-use-pathlib
+    "ISC",# flake8-implicit-str-concat
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.bandit]
+exclude_dirs = ["tests"]
+
+[tool.uv]
+package = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = "-v --tb=short --strict-markers --strict-config"
+markers = [
+    "asyncio: marks tests as async",
+    "integration: marks tests as integration tests",
+]
+
