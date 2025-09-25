@@ -10,7 +10,7 @@ from invoke.tasks import task
 from sensor_api.data.models import MetricType
 
 
-def generate_weather_data() -> dict:
+def generate_data() -> dict:
     """Generate simple numeric metrics."""
     keys = [m.value for m in MetricType.__members__.values()]
     return {key: round(random.uniform(0, 100), 2) for key in keys}
@@ -25,7 +25,7 @@ async def send_sensor_data(
     sensor_type: str,
 ) -> bool:
     """Send sensor data to the API."""
-    metrics = generate_weather_data()
+    metrics = generate_data()
 
     payload = {
         "location": location,
