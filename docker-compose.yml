@@ -14,11 +14,12 @@ services:
   sensor-api:
     build: .
     container_name: sensor-api
+    ports:
+      - "8000:8000"
     environment:
-      - DATABASE_CREDENTIALS=${DATABASE_CREDENTIALS}
+      - DATABASE_CREDENTIALS=${DB_USER}:${DB_PASSWORD}@timescaledb:5432/${DB_NAME}
     depends_on:
       - timescaledb
-    network_mode: host
     restart: unless-stopped
 
 volumes:
